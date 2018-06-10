@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Gallery</string>
+    <string name="image_description">Image preview in headers section</string>
 </resources>
