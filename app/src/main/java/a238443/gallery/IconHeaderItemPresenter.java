@@ -29,6 +29,8 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
         LayoutInflater inflater = (LayoutInflater) viewGroup.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = inflater.inflate(R.layout.header_main, viewGroup, false);
+        view.setFocusableInTouchMode(true);
+        view.setClickable(true);
         return new ViewHolder(view);
     }
 
@@ -47,6 +49,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         IconHeaderItem iconHeaderItem = (IconHeaderItem) ((ListRow) o).getHeaderItem();
         View rootView = viewHolder.view;
         rootView.setFocusable(true);
+        rootView.setClickable(true);
 
         ImageView iconView = rootView.findViewById(R.id.header_icon);
 
@@ -67,7 +70,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
             if(viewsToUpdate.size()>0 && icons.size() > 0) {
                 View rootView;
                 ImageView icon;
-                while (viewsToUpdate.size() > 0) {
+                while (viewsToUpdate.size() > 0 && updatePositions.get(0) < icons.size()) {
                     rootView = viewsToUpdate.get(0);
                     icon = rootView.findViewById(R.id.header_icon);
                     icon.setImageDrawable(icons.get(updatePositions.get(0)));

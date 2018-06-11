@@ -3,6 +3,7 @@ package a238443.gallery;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -37,7 +38,7 @@ public class MainFragment extends BrowseFragment {
     ArrayList<Target> targets;
     IconHeaderItemPresenter presenter;
 
-    public static final int IMAGES_AMOUNT = 10;
+    public static final int IMAGES_AMOUNT = 11;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -78,7 +79,8 @@ public class MainFragment extends BrowseFragment {
     }
 
     private void setupImages() {
-        downloadBitmap(getActivity(),"https://bit.ly/2MgcZv1");
+        downloadBitmap(getActivity(),"https://bit.ly/2HHDeqr");
+        downloadBitmap(getActivity(),"https://bit.ly/2JKrvMZ");
         downloadBitmap(getActivity(),"https://bit.ly/2sQg1wW");
         downloadBitmap(getActivity(),"https://bit.ly/2l2Z3YS");
         downloadBitmap(getActivity(),"https://bit.ly/2HC9w68");
@@ -131,8 +133,14 @@ public class MainFragment extends BrowseFragment {
             public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
                 Log.i("TAG","Bitmap loaded");
                 images.add(new BitmapDrawable(getResources(), bitmap));
-                Bitmap scaled = Bitmap.createScaledBitmap(bitmap,600,360,false);
-                simplified.add(new BitmapDrawable(getResources(), scaled));
+
+                Bitmap icon;
+                if(simplified.size() == 0)
+                    icon = BitmapFactory.decodeResource(getResources(), R.drawable.header);
+                else
+                    icon = Bitmap.createScaledBitmap(bitmap, 480, 300, false);
+
+                simplified.add(new BitmapDrawable(getResources(), icon));
                 presenter.addIcons(simplified);
             }
 
@@ -160,10 +168,12 @@ public class MainFragment extends BrowseFragment {
 
     private void buildRowsAdapter() {
         imagesAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+        ArrayObjectAdapter listRowAdapter;
+        IconHeaderItem header;
 
         for (int i = 0; i < IMAGES_AMOUNT; i++) {
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new ListRowPresenter());
-            IconHeaderItem header = new IconHeaderItem(i,"",i);
+            listRowAdapter = new ArrayObjectAdapter(new ListRowPresenter());
+            header = new IconHeaderItem(i,"",i);
             imagesAdapter.add(new ListRow(header, listRowAdapter));
         }
         setAdapter(imagesAdapter);
