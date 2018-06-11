@@ -1,6 +1,7 @@
 package a238443.gallery;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -19,6 +20,7 @@ import android.support.v17.leanback.widget.RowPresenter;
 import android.support.v4.content.ContextCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
@@ -30,10 +32,12 @@ public class MainFragment extends BrowseFragment {
     BackgroundManager backgroundManager;
     Drawable defaultBackground;
     DisplayMetrics metrics;
-    ArrayList<Bitmap> images;
-    ArrayList<Bitmap> simplified;
+    ArrayList<BitmapDrawable> images;
+    ArrayList<BitmapDrawable> simplified;
     ArrayList<Target> targets;
     IconHeaderItemPresenter presenter;
+
+    public static final int IMAGES_AMOUNT = 10;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -41,23 +45,27 @@ public class MainFragment extends BrowseFragment {
         targets = new ArrayList<>();
         images = new ArrayList<>();
         simplified = new ArrayList<>();
+        presenter = new IconHeaderItemPresenter();
 
         setupImages();
-
         prepareBackgroundManager();
         setupUIElements();
+        buildRowsAdapter();
+        setupEventListeners();
 
         setHeaderPresenterSelector(new PresenterSelector() {
             @Override
             public Presenter getPresenter(Object o) {
-                presenter = new IconHeaderItemPresenter();
                 presenter.addIcons(simplified);
                 return presenter;
             }
         });
+    }
 
-        buildRowsAdapter();
-        setupEventListeners();
+    @Override
+    public void onResume() {
+        super.onResume();
+        clearBackground();
     }
 
     private void prepareBackgroundManager() {
@@ -77,33 +85,9 @@ public class MainFragment extends BrowseFragment {
         downloadBitmap(getActivity(),"https://bit.ly/2sW2rIh");
         downloadBitmap(getActivity(),"https://bit.ly/2l35lYu");
         downloadBitmap(getActivity(),"https://bit.ly/2HBKFj8");
-    }
-
-    private ArrayList<Bitmap> simplifyBitmap() {
-        ArrayList<Bitmap> result = new ArrayList<>();
-
-        for(int i=0; i<images.size();i++)
-            result.add(Bitmap.createScaledBitmap(images.get(i),600,360,false));
-
-        return result;
-    }
-
-    private class IconsThread extends Thread {
-        IconHeaderItemPresenter toNotify;
-        boolean notified = false;
-
-        IconsThread(IconHeaderItemPresenter toNotify) {
-            this.toNotify = toNotify;
-        }
-
-        public void run() {
-            if(images != null && images.size() > 0 && !notified) {
-                ArrayList<Bitmap> simplified = simplifyBitmap();
-                toNotify.addIcons(simplified);
-                notified = true;
-                Log.i("TAG","Thread running");
-            }
-        }
+        downloadBitmap(getActivity(),"https://bit.ly/2sZxJOK");
+        downloadBitmap(getActivity(),"https://bit.ly/2JCjIO7");
+        downloadBitmap(getActivity(),"https://bit.ly/2LHM0r4");
     }
 
     protected void updateBackground(Drawable drawable) {
@@ -115,10 +99,18 @@ public class MainFragment extends BrowseFragment {
     }
 
     private void setupEventListeners() {
+        setOnSearchClickedListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), CosmosActivity.class);
+                startActivity(intent);
+            }
+        });
+
         setOnItemViewClickedListener(new OnItemViewClickedListener() {
             @Override
             public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item, RowPresenter.ViewHolder rowViewHolder, Row row) {
-                updateBackground(new BitmapDrawable(getResources(), images.get(imagesAdapter.indexOf(row))));
+                updateBackground(images.get(imagesAdapter.indexOf(row)));
             }
         });
 
@@ -128,7 +120,7 @@ public class MainFragment extends BrowseFragment {
                 if(images.size() == 0)
                     clearBackground();
                 else
-                    updateBackground(new BitmapDrawable(getResources(), images.get(imagesAdapter.indexOf(row))));
+                    updateBackground(images.get(imagesAdapter.indexOf(row)));
             }
         });
     }
@@ -137,19 +129,21 @@ public class MainFragment extends BrowseFragment {
         Target target = new Target(){
             @Override
             public void onBitmapLoaded(final Bitmap bitmap, Picasso.LoadedFrom from) {
-                Log.i("TAG","loaded");
-                images.add(bitmap);
-                simplified.add(Bitmap.createScaledBitmap(bitmap,600,360,false));
+                Log.i("TAG","Bitmap loaded");
+                images.add(new BitmapDrawable(getResources(), bitmap));
+                Bitmap scaled = Bitmap.createScaledBitmap(bitmap,600,360,false);
+                simplified.add(new BitmapDrawable(getResources(), scaled));
+                presenter.addIcons(simplified);
             }
 
             @Override
             public void onBitmapFailed(Drawable errorDrawable) {
-                Log.i("TAG","failed");
+                Log.i("TAG","Bitmap failed");
             }
 
             @Override
             public void onPrepareLoad(Drawable placeHolderDrawable) {
-                Log.i("TAG","prepared");
+                Log.i("TAG","Bitmap prepared");
             }
         };
         targets.add(target);
@@ -164,14 +158,11 @@ public class MainFragment extends BrowseFragment {
         setSearchAffordanceColor(ContextCompat.getColor(getActivity(), R.color.colorSearch));
     }
 
-    private static final int NUM_ROWS = 7;
-
     private void buildRowsAdapter() {
         imagesAdapter = new ArrayObjectAdapter(new ListRowPresenter());
 
-        for (int i = 0; i < NUM_ROWS; ++i) {
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(
-                    new ListRowPresenter());
+        for (int i = 0; i < IMAGES_AMOUNT; i++) {
+            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new ListRowPresenter());
             IconHeaderItem header = new IconHeaderItem(i,"",i);
             imagesAdapter.add(new ListRow(header, listRowAdapter));
         }

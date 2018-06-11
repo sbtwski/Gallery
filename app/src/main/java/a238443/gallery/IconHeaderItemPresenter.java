@@ -1,9 +1,8 @@
 package a238443.gallery;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.support.annotation.Nullable;
+import android.os.Handler;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.RowHeaderPresenter;
@@ -17,18 +16,30 @@ import android.widget.ImageView;
 import java.util.ArrayList;
 
 public class IconHeaderItemPresenter extends RowHeaderPresenter {
-    private ArrayList<Bitmap> icons;
+    private ArrayList<BitmapDrawable> icons;
+    private Handler updateHandler;
+    private ArrayList<View> viewsToUpdate = new ArrayList<>();
+    private ArrayList<Integer> updatePositions = new ArrayList<>();
+    private boolean iconsLoaded = false;
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup) {
+        updateHandler = new Handler();
+        updateIcons.run();
+
         LayoutInflater inflater = (LayoutInflater) viewGroup.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        final ViewGroup nullParent = null;
         View view = inflater.inflate(R.layout.header_main, viewGroup, false);
         return new ViewHolder(view);
     }
 
-    void addIcons(ArrayList<Bitmap> iconsList) {
-        icons = iconsList;
+    void addIcons(ArrayList<BitmapDrawable> iconsList) {
+        if(!iconsLoaded) {
+            if(iconsList != null) {
+                icons = iconsList;
+                if(icons.size() == MainFragment.IMAGES_AMOUNT)
+                    iconsLoaded = true;
+            }
+        }
     }
 
     @Override
@@ -39,18 +50,35 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
         ImageView iconView = rootView.findViewById(R.id.header_icon);
 
-        if(icons.size() > 0) {
-            BitmapDrawable temp = new BitmapDrawable(rootView.getResources(), icons.get(iconHeaderItem.getIconPosition()));
-            iconView.setImageDrawable(temp);
+        if(icons.size() == MainFragment.IMAGES_AMOUNT) {
+            iconView.setImageDrawable(icons.get(iconHeaderItem.getIconPosition()));
         }
         else {
-            Log.i("TAG","FAIL");
+            Log.i("TAG","Icon not found ");
             iconView.setImageDrawable(ContextCompat.getDrawable(rootView.getContext(), R.drawable.ic_image));
+            viewsToUpdate.add(rootView);
+            updatePositions.add(iconHeaderItem.getIconPosition());
         }
     }
 
+    private Runnable updateIcons = new Runnable() {
+        @Override
+        public void run() {
+            if(viewsToUpdate.size()>0 && icons.size() > 0) {
+                View rootView;
+                ImageView icon;
+                while (viewsToUpdate.size() > 0) {
+                    rootView = viewsToUpdate.get(0);
+                    icon = rootView.findViewById(R.id.header_icon);
+                    icon.setImageDrawable(icons.get(updatePositions.get(0)));
+                    viewsToUpdate.remove(0);
+                    updatePositions.remove(0);
+                }
+            }
+            updateHandler.postDelayed(this, 500);
+        }
+    };
+
     @Override
-    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
-        // no op
-    }
+    public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {}
 }
